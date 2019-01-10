@@ -1,0 +1,10 @@
+struct Material
+{
+	vec3 diffuse;
+	float specular;
+
+	// If hasDiffuseMap is set to false vertex colors are used
+	bool hasDiffuseMap;
+	bool hasSpecularMap;
+	bool hasNormalMap;
+};

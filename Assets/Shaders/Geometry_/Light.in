@@ -1,0 +1,126 @@
+struct PointLight
+{
+	vec3 position;
+	float radius;
+
+	vec3 diffuse;
+	vec3 specular;
+	vec3 ambient;
+};
+
+struct SpotLight
+{
+    vec3 position;
+    vec3 direction;
+
+	float radius;
+	float cutoff;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+struct DirLight
+{
+    vec3 direction;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+vec3 calcLight(vec3 lightVector, vec3 normal, float attenuationDenom,
+	vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular,
+	vec3 tCameraPosition, vec3 tFragPosition, vec3 diffuseColor,
+	vec3 specularColor, vec3 normalColor)
+{
+	vec3 viewDir = normalize(tCameraPosition - tFragPosition);
+
+	if (normalColor != vec3(0.0, 0.0, 0.0))
+		normal = normalize(255.0/128.0 * normalColor - 1.0);
+
+	vec3 halfwayDir = normalize(lightVector + viewDir);
+
+	// Attenuation
+	float attenuation = 1.0;
+	if (attenuationDenom > 0.0)
+	{
+		float denom = attenuationDenom + 1.0;
+		attenuation = 1.0 / (denom*denom);
+		if (attenuation <= 0.05) return vec3(0.0);
+		attenuation = max((attenuation - 0.05) / (1.0 - 0.05), 0.0);
+	}
+
+	// Diffuse
+	float diff = max(dot(normal, lightVector), 0.0);
+
+	// Specular
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
+
+	// Combine results
+	vec3 ambient  = lightAmbient  * diffuseColor;
+	vec3 diffuse  = lightDiffuse  * diff * diffuseColor;
+	vec3 specular = lightSpecular * spec * specularColor;
+
+	// Shadow
+	vec3 shadow = vec3(1.0);
+
+	return attenuation * (ambient + shadow * (diffuse + specular));
+}
+
+vec3 calcPointLight(PointLight light, vec3 normal,
+		vec3 tLightPosition, vec3 tCameraPosition,
+		vec3 tFragPosition, vec3 diffuseColor,
+		vec3 specularColor, vec3 normalColor)
+{
+	vec3 lightDir = tLightPosition - tFragPosition;
+	vec3 lightPos = normalize(lightDir);
+
+	return calcLight(lightPos, normal, length(lightDir)/light.radius,
+			light.ambient, light.diffuse, light.specular,
+			tCameraPosition, tFragPosition, diffuseColor,
+			specularColor, normalColor);
+}
+
+vec3 calcSpotLight(SpotLight light, vec3 normal,
+		vec3 tLightPosition, vec3 tLightDirection,
+		vec3 tCameraPosition, vec3 tFragPosition,
+		vec3 diffuseColor, vec3 specularColor,
+		vec3 normalColor)
+{
+	vec3 lightDir = tLightPosition - tFragPosition;
+	vec3 lightPos = normalize(lightDir);
+	float factor = dot(normalize(tLightDirection), -lightPos);
+
+	if (factor <= light.cutoff) return vec3(0.0);
+
+	return calcLight(lightPos, normal, length(lightDir)/light.radius,
+					light.ambient, light.diffuse, light.specular,
+					tCameraPosition, tFragPosition, diffuseColor,
+					specularColor, normalColor)
+				* (1.0 - (1.0 - factor) / (1.0 - light.cutoff));
+}
+
+vec3 calcDirLight(DirLight light, vec3 normal,
+		vec3 tLightDirection, vec3 tCameraPosition,
+		vec3 tFragPosition, vec3 diffuseColor,
+		vec3 specularColor, vec3 normalColor)
+{
+	vec3 lightDir = normalize(-tLightDirection);
+
+	return calcLight(lightDir, normal, -1.0, light.ambient,
+			light.diffuse, light.specular, tCameraPosition,
+			tFragPosition, diffuseColor, specularColor,
+			normalColor);
+}
+
+mat3 calcTBN(mat4 model, vec3 tangent, vec3 normal, vec3 bitangent)
+{
+	mat3 normalMatrix = transpose(inverse(mat3(model)));
+	vec3 T = normalize(normalMatrix * tangent);
+	vec3 N = normalize(normalMatrix * normal);
+	vec3 B = normalize(normalMatrix * bitangent);
+
+	return transpose(mat3(T, B, N));
+}

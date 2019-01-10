@@ -1,0 +1,50 @@
+struct Material
+{
+	vec3 diffuse;
+	float specular;
+	vec3 ambient;
+
+	// If hasDiffuseMap is set to false, vertex colors are used
+	bool hasDiffuseMap;
+	bool hasSpecularMap;
+	bool hasNormalMap;
+	bool hasBumpMap;
+
+	sampler2D textureDiffuse;
+	sampler2D textureSpecular;
+	sampler2D textureNormal;
+	sampler2D textureBump;
+};
+
+void getColors(Material material, out vec3 diffuseColor, out vec3 specularColor, out vec3 normalColor, out vec3 ambientColor)
+{
+	vec2 texCoord1 = texCoord0;
+
+	// if (material.hasBumpMap)
+	// {
+	// 	vec3 viewDir = (normalize(cameraPosition - fragPosition0) * TBN);
+	// 	float height = texture2D(material.textureBump, texCoord0).r;
+	// 	texCoord1 += (viewDir.xy / viewDir.z) * (height * 0.03 + (-0.015 * (1.5)));
+	// 	if (texCoord1.x > 1.0 || texCoord1.x < 0.0 || texCoord1.y > 1.0 || texCoord1.y < 0.0)
+	// 		discard;
+	// }
+
+	diffuseColor = vec3(1.0);
+	if (material.hasDiffuseMap)
+		diffuseColor = vec3(texture2D(material.textureDiffuse, texCoord1));
+	// else
+	// 	diffuseColor = color0;
+
+	specularColor = vec3(1.0);
+	if (material.hasSpecularMap)
+		specularColor = vec3(texture2D(material.textureSpecular, texCoord1));
+
+	normalColor = vec3(128.0/255.0, 128.0/255.0, 256.0/255.0);
+	if (material.hasNormalMap)
+		normalColor = vec3(texture2D(material.textureNormal, texCoord1));
+
+	diffuseColor *= material.diffuse;
+	specularColor *= material.specular;
+	normalColor = normalize(255.0/128.0 * normalColor - 1.0);
+	ambientColor = material.ambient;
+}

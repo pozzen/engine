@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<material>
+	<diffuse texture="Assets/Textures/bricks2.jpg" color="#FFFFFF"/>
+	<specular intensity="0.5"/>
+	<normal texture="Assets/Textures/bricks2_normal.jpg"/>
+</material>

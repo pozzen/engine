@@ -1,0 +1,13 @@
+#ifdef VS
+
+#define VSMain main
+#define PSMain __psmain
+#define VARYING out
+
+#else
+
+#define PSMain main
+#define VSMain __vsmain
+#define VARYING in
+
+#endif
